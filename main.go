@@ -2,16 +2,36 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
 
 	"github.com/negativeOne1/raytracing/ray"
 	"github.com/negativeOne1/raytracing/vec"
 )
 
+func hitSphere(center vec.Vec3, radius float64, r ray.Ray) float64 {
+	oc := vec.Sub(r.Origin(), center)
+	a := vec.Dot(r.Direction(), r.Direction())
+	b := 2.0 * vec.Dot(oc, r.Direction())
+	c := vec.Dot(oc, oc) - radius*radius
+	discriminant := b*b - 4*a*c
+
+	if discriminant < 0 {
+		return -1.0
+	}
+	return (-b - math.Sqrt(discriminant)) / (2.0 * a)
+}
+
 func rayColor(r ray.Ray) vec.Vec3 {
+	t := hitSphere(vec.New(0, 0, -1), 0.5, r)
+
+	if t > 0 {
+		N := vec.Sub(r.At(t), vec.New(0, 0, -1)).AsUnit()
+		return vec.New(N.X()+1, N.Y()+1, N.Z()+1).Mul(0.5)
+	}
 	unitDirection := r.Direction().AsUnit()
 
-	t := 0.5 * (unitDirection.Y() + 1.0)
+	t = 0.5 * (unitDirection.Y() + 1.0)
 	v1 := vec.New(1.0, 1.0, 1.0).Mul(1.0 - t)
 	v2 := vec.New(0.5, 0.7, 1.0).Mul(t)
 	return vec.Add(v2, v1)
@@ -26,7 +46,7 @@ var (
 	//Camera
 	viewportHeight float64 = 2.0
 	viewportWidth  float64 = aspectRatio * viewportHeight
-	focalLength    float64 = 2.0
+	focalLength    float64 = 1.0
 
 	origin          vec.Vec3 = vec.New(0, 0, 0)
 	horizontal      vec.Vec3 = vec.New(float64(viewportWidth), 0, 0)
